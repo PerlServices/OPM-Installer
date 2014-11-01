@@ -8,7 +8,7 @@ use Types::Standard qw(ArrayRef Str);
 use OTRS::OPM::Installer::Types;
 use OTRS::Repository;
 use HTTP::Tiny;
-use File::Temp;
+use IO::All;
 
 has repositories => ( is => 'ro', isa => ArrayRef[Str], default => \&_repository_list );
 has package      => ( is => 'ro', isa => Str, required => 1 );
@@ -20,8 +20,9 @@ sub resolve_path {
     my $path;
 
     my $package = $self->package;
-    if ( _is_url( $package ) ) {
+    if ( $self->_is_url( $package ) ) {
         # download file
+        $path = $self->_download( $package );
     }
     elsif ( -e $package ) {
         # do nothing, file already exists
@@ -29,14 +30,28 @@ sub resolve_path {
     }
     else {
         my $repo = OTRS::Repository->new(
-            sources => $self->_repository_for( $
+            sources => $self->_repository_for( $self->otrs_version ),
         );
+
+        my ($url) = $repo->find( 
+        $path = $self->_download( $package );
     }
 
     return $path;
 }
 
 sub _repository_list {
+}
+
+sub _download {
+    my ($self, $url) = @_;
+
+    my $file     = io '?';
+    my $response = HTTP::Tiny->new->mirror( $url, $file );
+
+    $self->logger->print( 'download', file => $file, success => $response->{success} );
+
+    return $file;
 }
 
 1;
