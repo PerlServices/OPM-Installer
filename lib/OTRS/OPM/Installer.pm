@@ -31,8 +31,18 @@ sub install {
 
     my %params = @_;
 
+    my %file_opts;
+    if ( $params{repositories} and ref $params{repositories} eq 'ARRAY' ) {
+        $file_opts{repositories} = $params{repositories};
+    }
+    if ( $params{version} and $params{version_exact} ) {
+        $file_opts{version} = $params{version};
+    }
+   
     my $package_utils = OTRS::OPM::Installer::Utils::File->new(
-        package => $params{package} || $self->package,
+        %file_opts,
+        package      => $params{package} || $self->package,
+        otrs_version => $self->otrs_version,
     );
 
     my $package_path = $package_utils->resolve_path;
