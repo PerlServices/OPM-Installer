@@ -11,11 +11,11 @@ use Types::Standard qw(ArrayRef Str);
 use OTRS::OPM::Installer::Types qw(OTRSVersion);
 use OTRS::OPM::Installer::Utils::Versions;
 
-has otrs_version => ( is => 'rwp', isa => OTRSVersion );
-has inc          => ( is => 'rwp', isa => ArrayRef[Str] );
-has path         => ( is => 'rwp', isa => Str );
-has manager      => ( is => 'rwp', isa => Object );
-has db           => ( is => 'rwp', isa => Object );
+has otrs_version => ( is => 'rwp', );#isa => OTRSVersion );
+has inc          => ( is => 'rwp', );#isa => ArrayRef[Str] );
+has path         => ( is => 'rwp', );#isa => Str );
+has manager      => ( is => 'rwp', );#isa => Object );
+has db           => ( is => 'rwp', );#isa => Object );
 
 sub is_installed {
     my ($self) = @_;

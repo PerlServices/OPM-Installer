@@ -12,10 +12,17 @@ my $file = io '?';
 
 has log => (is => 'ro', default => sub { $file });
 
+for my $level (qw/notice info debug warn error/) {
+    no strict 'refs';
+    *{"OTRS::OPM::Installer::Logger::$level"} = sub {
+        shift->print( $level, @_ );
+    };
+}
+
 sub print {
     my ($self, $tag, %attr) = @_;
 
-    my $attrs   = join " ", map{ sprintf '%s="%s"', $_, $attr{$_} }keys %attr;
+    my $attrs   = join " ", map{ sprintf '%s="%s"', $_, $attr{$_} }sort keys %attr;
     my $message = sprintf "<%s %s />", $tag, $attrs;
     $message >> io $self->log;
 }
@@ -27,6 +34,7 @@ sub BUILD {
     "\n" .
     '<log>'
         > io $self->log
+}
     
 
 sub DEMOLISH {

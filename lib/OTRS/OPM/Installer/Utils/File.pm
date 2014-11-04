@@ -9,10 +9,12 @@ use OTRS::OPM::Installer::Types;
 use OTRS::Repository;
 use HTTP::Tiny;
 use IO::All;
+use OTRS::OPM::Installer::Logger;
 
 has repositories => ( is => 'ro', isa => ArrayRef[Str], default => \&_repository_list );
 has package      => ( is => 'ro', isa => Str, required => 1 );
 has otrs_version => ( is => 'ro', isa => Str, required => 1 );
+has logger       => ( is => 'ro', default => sub{ OTRS::OPM::Installer::Logger->new } );
 
 sub resolve_path {
     my ($self) = @_;
@@ -33,7 +35,7 @@ sub resolve_path {
             sources => $self->_repository_for( $self->otrs_version ),
         );
 
-        my ($url) = $repo->find( 
+        my ($url) = $repo->find( );
         $path = $self->_download( $package );
     }
 
@@ -43,13 +45,16 @@ sub resolve_path {
 sub _repository_list {
 }
 
+sub _is_download {
+}
+
 sub _download {
     my ($self, $url) = @_;
 
     my $file     = io '?';
     my $response = HTTP::Tiny->new->mirror( $url, $file );
 
-    $self->logger->print( 'download', file => $file, success => $response->{success} );
+    $self->logger->notice( area => 'download', file => $file, success => $response->{success} );
 
     return $file;
 }

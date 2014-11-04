@@ -14,10 +14,11 @@ use OTRS::OPM::Analyzer::Utils::OPMFile;
 use OTRS::OPM::Installer::Types;
 use OTRS::OPM::Installer::Utils::OTRS;
 use OTRS::OPM::Installer::Utils::File;
-use OTRS::OPM::Installer::PackageManager;
 
-has package      => ( is => 'ro', isa => OPMPathOrURI );
-has otrs_version => ( is => 'ro', isa => OTRSVersion, lazy => 1 );
+our $VERSION = 0.01;
+
+has package      => ( is => 'ro', isa => Str );
+has otrs_version => ( is => 'ro', isa => Str, lazy => 1 );
 has prove        => ( is => 'ro', default => sub { 0 } );
 has manager      => ( is => 'ro', lazy => 1 );
 has utils_otrs   => ( is => 'ro', lazy => 1 );
@@ -122,8 +123,8 @@ sub _build_manager {
             my $class = 'Kernel::System::' . $module;
             $objects{$module . 'Object'} = $class->new( %objects );
         }
-    } or {
-        OTRS::OPM::Installer::PackageManager->new;
+
+       $manager = $objects{PackageObject};
     };
 
     $manager;
@@ -135,6 +136,28 @@ sub _build_utils_otrs {
 
 sub _build_otrs_version {
     shift->utils_otrs->otrs_version;
+}
+
+sub _check_matching_versions {
+    my ($self, $parsed, $otrs_version) = @_;
+
+    my ($major, $minor, $patch) = split /\./, $otrs_version;
+
+    my $check_ok;
+
+    FRAMEWORK:
+    for my $required_framework ( $parsed->framework ) {
+        my ($r_major, $r_minor, $r_patch) = split /\./, $required_framework;
+
+        next FRAMEWORK if $r_major != $major;
+        next FRAMEWORK if lc $r_minor ne 'x' && $r_minor != $minor;
+        next FRAMEWORK if lc $r_patch ne 'x' && $r_patch != $patch;
+
+        $check_ok = 1;
+        last FRAMEWORK;
+    }
+
+    return $check_ok;
 }
 
 1;
