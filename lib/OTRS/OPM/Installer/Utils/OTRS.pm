@@ -42,51 +42,29 @@ sub _find_version {
     return $version;
 }
 
-sub _get_db {
-    my ($self) = @_;
-
-    return $self->
-}
-
 sub _build_inc {
     my ($self) = @_;
 
     return [ map{ $self->path . "/" . $_ }( '', 'cpan-lib' ) ];
 }
 
-sub _find_path {
-    my ($self) = @_;
-}
-
-sub _build_manager {
-    my ($self) = @_;
-
-    push @INC, @{ $self->inc };
-
-    my $manager;
-    eval {
-        require Kernel::Config;
-        require Kernel::System::Main;
-        require Kernel::System::Encode;
-        require Kernel::System::Log;
-        require Kernel::System::DB;
-        require Kernel::System::Time;
-        require Kernel::System::Package;
-
-        my %objects = ( ConfigObject => Kernel::Config->new );
-
-        for my $module (qw/Main Encode Log DB Time Package/) {
-            my $class = 'Kernel::System::' . $module;
-            $objects{$module . 'Object'} = $class->new( %objects );
-        }
-
-       $manager = $objects{PackageObject};
-    };
-
-    $manager;
-}
-
 sub BUILD {
+    my ($self) = @_;
+
+    my ($major) = $self->otrs_version =~ m{\A(\d+)\.};
+    if ( $major <= 3 ) {
+        with 'OTRS::OPM::Installer::Utils::OTRS::OTRS3';
+    }
+    else {
+        with 'OTRS::OPM::Installer::Utils::OTRS::OTRS4';
+    }
+
+    if ( $^O =~ m{Win32}i ) {
+        with 'OTRS::OPM::Installer::Utils::OTRS::Win32';
+    }
+    else {
+        with 'OTRS::OPM::Installer::Utils::OTRS::Linux';
+    }
 }
 
 1;
