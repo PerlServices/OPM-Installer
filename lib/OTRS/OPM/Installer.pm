@@ -105,29 +105,7 @@ sub BUILDARGS {
 sub _build_manager {
     my $self = shift;
 
-    push @INC, $self->utils_otrs->inc;
-
-    my $manager;
-    eval {
-        require Kernel::Config;
-        require Kernel::System::Main;
-        require Kernel::System::Encode;
-        require Kernel::System::Log;
-        require Kernel::System::DB;
-        require Kernel::System::Time;
-        require Kernel::System::Package;
-
-        my %objects = ( ConfigObject => Kernel::Config->new );
-
-        for my $module (qw/Main Encode Log DB Time Package/) {
-            my $class = 'Kernel::System::' . $module;
-            $objects{$module . 'Object'} = $class->new( %objects );
-        }
-
-       $manager = $objects{PackageObject};
-    };
-
-    $manager;
+    return $self->utils_otrs->manager;
 }
 
 sub _build_utils_otrs {
