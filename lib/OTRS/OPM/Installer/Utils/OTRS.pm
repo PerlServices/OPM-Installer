@@ -5,11 +5,12 @@ package OTRS::OPM::Installer::Utils::OTRS;
 use strict;
 use warnings;
 
+use Carp;
 use Moo;
 use Types::Standard qw(ArrayRef Str);
 
 use OTRS::OPM::Installer::Types qw(OTRSVersion);
-use OTRS::OPM::Installer::Utils::Versions;
+use OTRS::OPM::Installer::Utils::File;
 
 has otrs_version => ( is => 'rwp', lazy => 1, default => \&_find_version);#isa => OTRSVersion );
 has inc          => ( is => 'rwp', lazy => 1, default => \&_build_inc );#isa => ArrayRef[Str] );
@@ -48,6 +49,22 @@ sub _build_inc {
     return [ map{ $self->path . "/" . $_ }( '', 'cpan-lib' ) ];
 }
 
+sub BUILDARGS {
+    my $class = shift;
+
+    if ( @_ % 2 != 0 ) {
+        croak 'Check the parameters for ' . __PACKAGE__ . '. You have to pass a hash.';
+    }
+
+    my %args = @_;
+    if ( !exists $args{path} ) {
+        my $utils = OTRS::OPM::Installer::Utils::File->new;
+        my $cfg   = $utils->rc_conf;
+
+        $args{path} = $cfg{otrs_path} if defined $cfg{otrs_path};
+    }
+}
+
 sub BUILD {
     my ($self) = @_;
 
@@ -59,7 +76,10 @@ sub BUILD {
         with 'OTRS::OPM::Installer::Utils::OTRS::OTRS4';
     }
 
-    if ( $^O =~ m{Win32}i ) {
+    if ( $ENV{OTRSOPMINSTALLERTEST} ) {
+        with 'OTRS::OPM::Installer::Utils::OTRS::Test';
+    }
+    elsif ( $^O =~ m{Win32}i ) {
         with 'OTRS::OPM::Installer::Utils::OTRS::Win32';
     }
     else {
