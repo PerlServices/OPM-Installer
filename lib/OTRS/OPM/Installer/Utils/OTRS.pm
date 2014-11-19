@@ -19,18 +19,24 @@ has manager      => ( is => 'rwp', lazy => 1, default => \&_build_manager );#isa
 has db           => ( is => 'rwp', lazy => 1, default => \&_get_db );#isa => Object );
 
 sub is_installed {
-    my ($self) = @_;
+    my ($self, %param) = @_;
 
-    my $sql = 'SELECT name, version FROM package_repository WHERE name = $param{package}';
+    my $sql = 'SELECT name, version FROM package_repository WHERE name = ?';
 
     return if !$self->db;
 
     $self->db->Prepare(
+        SQL  => $sql,
+        Bind => [ \$param{package} ],
     );
 
-    my $name;
+    my %info;
     while ( my @row = $self->db->FetchrowArray() ) {
+        %info = (
+        );
     }
+
+    return %info;
 }
 
 sub _find_version {
