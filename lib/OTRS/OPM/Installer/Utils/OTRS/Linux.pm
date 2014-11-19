@@ -6,19 +6,22 @@ use warnings;
 use Moo::Role;
 use File::Spec;
 use File::Basename;
+use List::Util qw(first);
+use File::Glob qw(bsd_glob);
 
 sub _find_path {
     my ($self) = @_;
 
-    my @levels_up = ('..') x 5;
-    my $dir       = File::Spec->catdir( dirname(__FILE__), @levels_up );
-    my $testdir   = File::Spec->catdir( $dir, $ENV{OTRSOPMINSTALLERTEST} );
+    my @checks    = qw(/opt/otrs /srv/otrs /etc/otrs);
+    my ($testdir) = grep { -d $_ }@checks;
 
-    if ( !-d $testdir ) {
-        $testdir = File::Spec->catdir( $dir, 3 );
-    }
+    return $testdir if $testdir;
 
-    return $testdir;
+    # try to find apache installation and read from config
+    my ($apachedir) = grep{ -d $_ }qw(/etc/apache2 /etc/httpd);
+    return if !$apachedir;
+
+    
 }
 
 1;
