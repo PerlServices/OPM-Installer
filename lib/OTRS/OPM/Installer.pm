@@ -21,7 +21,7 @@ has package      => ( is => 'ro', isa => Str );
 has otrs_version => ( is => 'ro', isa => Str, lazy => 1 );
 has prove        => ( is => 'ro', default => sub { 0 } );
 has manager      => ( is => 'ro', lazy => 1 );
-has utils_otrs   => ( is => 'ro', lazy => 1 );
+has utils_otrs   => ( is => 'ro', lazy => 1, default => sub{ OTRS::OPM::Installer::Utils::OTRS->new } );
 
 sub install {
     my $self   = shift;
