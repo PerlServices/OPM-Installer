@@ -5,18 +5,23 @@ package OTRS::OPM::Installer::Utils::OTRS;
 use strict;
 use warnings;
 
+our $VERSION = 0.01;
+
 use Carp;
 use Moo;
+use Module::Path qw/module_path/;
 use Types::Standard qw(ArrayRef Str);
 
 use OTRS::OPM::Installer::Types qw(OTRSVersion);
 use OTRS::OPM::Installer::Utils::File;
 
+has obj_env      => ( is => 'ro',  lazy => 1, default => \&_obj_env );
+has os_env       => ( is => 'ro',  lazy => 1, default => \&_os_env );
 has otrs_version => ( is => 'rwp', lazy => 1, default => \&_find_version);#isa => OTRSVersion );
 has inc          => ( is => 'rwp', lazy => 1, default => \&_build_inc );#isa => ArrayRef[Str] );
 has path         => ( is => 'rwp', lazy => 1, default => \&_find_path );#isa => Str );
 has manager      => ( is => 'rwp', lazy => 1, default => \&_build_manager );#isa => Object );
-has db           => ( is => 'rwp', lazy => 1, default => \&_get_db );#isa => Object );
+has db           => ( is => 'rwp', lazy => 1, default => \&_get_db ); #sub { my $class = $self->obj_env; my $string = $class . '::_get_db'; $self->$string(); } );#isa => Object );
 
 sub is_installed {
     my ($self, %param) = @_;
@@ -33,12 +38,58 @@ sub is_installed {
     my %info;
     while ( my @row = $self->db->FetchrowArray() ) {
         %info = (
+            name    => $row[0],
+            version => $row[1],
         );
     }
 
-    return %info;
+    return if !%info;
+
+    my $is_installed = $self->_check_version(
+        installed => $info{version},
+        requested => $param{version},
+    );
+
+    return 1 if $is_installed;
+    return;
 }
 
+sub _check_version {
+    my ($self, %param) = @_;
+
+    my @i_parts = split /\./, $param{installed};
+    my @r_parts = split /\./, $param{requested};
+
+    my $installed = sprintf "%03d%03d%03d", map{ $i_parts[$_] && $i_parts[$_] =~ m{\A[0-9]+\}z} ? $i_parts[$_] : 0 }( 0 .. 2);
+    my $requested = sprintf "%03d%03d%03d", map{ $r_parts[$_] && $r_parts[$_] =~ m{\A[0-9]+\}z} ? $r_parts[$_] : 0 }( 0 .. 2);
+
+    return $installed >= $requested;
+}
+
+sub _get_db {
+    my ($self) = @_;
+
+    my $class = $self->obj_env;
+    my $path  = module_path $class;
+    require $path;
+
+    my $string = $class . '::_get_db';
+
+    $self->$string();
+}
+ 
+sub _build_manager {
+    my ($self) = @_;
+
+    my $class = $self->obj_env;
+    my $path  = module_path $class;
+    require $path;
+
+    my $string = $class . '::_build_manager';
+
+    $self->$string();
+}
+ 
 sub _find_version {
     my ($self) = @_;
 
@@ -52,7 +103,7 @@ sub _find_version {
 sub _build_inc {
     my ($self) = @_;
 
-    return [ map{ $self->path . "/" . $_ }( '', 'cpan-lib' ) ];
+    return [ map{ $self->path . "/" . $_ }( '', 'Kernel/cpan-lib' ) ];
 }
 
 sub BUILDARGS {
@@ -64,32 +115,33 @@ sub BUILDARGS {
 
     my %args = @_;
     if ( !exists $args{path} ) {
-        my $utils = OTRS::OPM::Installer::Utils::File->new;
-        my $cfg   = $utils->rc_conf;
+        my $utils = OTRS::OPM::Installer::Utils::Config->new;
+        my $cfg   = $utils->rc_config;
 
-        $args{path} = $cfg{otrs_path} if defined $cfg{otrs_path};
+        $args{path} = $cfg->{otrs_path} if defined $cfg->{otrs_path};
     }
+
+    return \%args;
 }
 
-sub BUILD {
+sub _obj_env {
     my ($self) = @_;
 
     my ($major) = $self->otrs_version =~ m{\A(\d+)\.};
     if ( $major <= 3 ) {
-        with 'OTRS::OPM::Installer::Utils::OTRS::OTRS3';
+        return 'OTRS::OPM::Installer::Utils::OTRS::OTRS3';
     }
     else {
-        with 'OTRS::OPM::Installer::Utils::OTRS::OTRS4';
+        return 'OTRS::OPM::Installer::Utils::OTRS::OTRS4';
     }
+}
 
+sub _os_env {
     if ( $ENV{OTRSOPMINSTALLERTEST} ) {
-        with 'OTRS::OPM::Installer::Utils::OTRS::Test';
-    }
-    elsif ( $^O =~ m{Win32}i ) {
-        with 'OTRS::OPM::Installer::Utils::OTRS::Win32';
+        return 'OTRS::OPM::Installer::Utils::OTRS::Test';
     }
     else {
-        with 'OTRS::OPM::Installer::Utils::OTRS::Linux';
+        return 'OTRS::OPM::Installer::Utils::OTRS::Linux';
     }
 }
 

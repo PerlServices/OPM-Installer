@@ -1,9 +1,10 @@
-package OTRS::OPM::Installer::Utils::OTRS::Test;
+package OTRS::OPM::Installer::Utils::OTRS::Linux;
 
 use strict;
 use warnings;
 
 use Moo::Role;
+
 use File::Spec;
 use File::Basename;
 use List::Util qw(first);

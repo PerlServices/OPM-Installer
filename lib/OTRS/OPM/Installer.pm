@@ -2,26 +2,30 @@ package OTRS::OPM::Installer;
 
 # ABSTRACT: Install OTRS add ons
 
+use v5.10;
+
 use strict;
 use warnings;
 
+our $VERSION = 0.01;
+
 use Moo;
+use IO::All;
 use Capture::Tiny;
 use Types::Standard qw(ArrayRef Str);
 
-use OTRS::OPM::Analyzer::Utils::OPMFile;
+use OTRS::OPM::Parser;
 
 use OTRS::OPM::Installer::Types;
 use OTRS::OPM::Installer::Utils::OTRS;
 use OTRS::OPM::Installer::Utils::File;
 
-our $VERSION = 0.01;
-
 has package      => ( is => 'ro', isa => Str );
-has otrs_version => ( is => 'ro', isa => Str, lazy => 1 );
+has otrs_version => ( is => 'ro', isa => Str, lazy => 1, default => \&_build_otrs_version );
 has prove        => ( is => 'ro', default => sub { 0 } );
 has manager      => ( is => 'ro', lazy => 1 );
 has utils_otrs   => ( is => 'ro', lazy => 1, default => sub{ OTRS::OPM::Installer::Utils::OTRS->new } );
+has verbose      => ( is => 'ro', default => sub { 0 } );
 
 sub install {
     my $self   = shift;
@@ -39,6 +43,8 @@ sub install {
     if ( $params{version} and $params{version_exact} ) {
         $file_opts{version} = $params{version};
     }
+
+    say sprintf "Try to install %s...", $params{package} || $self->package if $self->verbose;
    
     my $package_utils = OTRS::OPM::Installer::Utils::File->new(
         %file_opts,
@@ -48,9 +54,19 @@ sub install {
 
     my $package_path = $package_utils->resolve_path;
 
-    my $parsed = OTRS::OPM::Analyzer::Utils::OPMFile->new(
+    die sprintf "Could not find a .opm file for %s%s (OTRS version %s)",
+        $self->package,
+        ( $file_opts{version} ? " $file_opts{version}" : "" ),
+        $self->otrs_version
+        if !$package_path;
+
+    my $parsed = OTRS::OPM::Parser->new(
         opm_file => $package_path,
     );
+
+    $parsed->parse;
+
+    die sprintf "Cannot parse $package_path: %s", $parsed->error_string if $parsed->error_string;
 
     die sprintf 'framework versions of %s (%s) doesn\'t match otrs version %s',
         $parsed->name,
@@ -58,9 +74,13 @@ sub install {
         $self->otrs_version
         if !$self->_check_matching_versions( $parsed, $self->otrs_version );
 
+    say sprintf "Working on %s...", $parsed->name if $self->verbose;
+
     my @dependencies = $parsed->dependencies;
     my @cpan_deps    = grep{ $_->{type} eq 'CPAN' }@dependencies;
     my @otrs_deps    = grep{ $_->{type} eq 'OTRS' }@dependencies;
+
+    say sprintf "Found dependencies: %s", join ', ', map{ $_->{name} }@dependencies if $self->verbose;
 
     for my $cpan_dep ( @cpan_deps ) {
         my $module  = $cpan_dep->{name};
@@ -81,7 +101,14 @@ sub install {
     }
 
     if ( $self->prove ) {
+        # TODO: run unittests
     }
+
+    my $content = io( $package_path )->slurp;
+
+    say sprintf "Install %s ...", $parsed->name if $self->verbose;
+
+    $self->manager->PackageInstall( String => $content );
 }
 
 sub _cpan_install {
@@ -97,9 +124,6 @@ sub _cpan_install {
     }
 
     return;
-}
-
-sub BUILDARGS {
 }
 
 sub _build_manager {

@@ -3,8 +3,6 @@ package OTRS::OPM::Installer::Utils::OTRS::OTRS3;
 use strict;
 use warnings;
 
-use Moo::Role;
-
 sub _get_db {
     my ($self) = @_;
 
@@ -34,7 +32,7 @@ sub _build_manager {
         }
 
        $manager = $objects{PackageObject};
-    };
+    } or die $@;
 
     $manager;
 }

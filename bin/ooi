@@ -11,7 +11,10 @@ GetOptions(
     'h'   => \my $help,
     'r=s' => \my @repositories,
     'v=s' => \my $version,
+    'vv'  => \my $verbose,
 );
+
+$package ||= $ARGV[0];
 
 if( $help || !$package ) {
     print_usage();
@@ -22,7 +25,10 @@ my %opts;
 $opts{repositories} = \@repositories if @repositories;
 $opts{version}      = $version       if $version;
 
-my $installer = OTRS::OPM::Installer->new;
+my %class_opts;
+$class_opts{verbose} = 1             if $verbose;
+
+my $installer = OTRS::OPM::Installer->new( %class_opts );
 $installer->install(
     package => $package,
     %opts,

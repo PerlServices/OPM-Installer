@@ -5,19 +5,27 @@ package OTRS::OPM::Installer::Utils::File;
 use strict;
 use warnings;
 
+our $VERSION = 0.01;
+
 use Moo;
 use Types::Standard qw(ArrayRef Str);
 use OTRS::OPM::Installer::Types;
 use OTRS::Repository;
 use HTTP::Tiny;
 use IO::All;
+use File::Temp;
 use OTRS::OPM::Installer::Logger;
+use OTRS::OPM::Installer::Utils::Config;
 use File::Spec;
 use File::HomeDir;
+use Regexp::Common qw(URI);
+
+our $ALLOWED_SCHEME = 'HTTP';
 
 has repositories => ( is => 'ro', isa => ArrayRef[Str], default => \&_repository_list );
 has package      => ( is => 'ro', isa => Str, required => 1 );
 has otrs_version => ( is => 'ro', isa => Str, required => 1 );
+has version      => ( is => 'ro', isa => Str  );
 has logger       => ( is => 'ro', default => sub{ OTRS::OPM::Installer::Logger->new } );
 has rc_config    => ( is => 'ro', lazy => 1, default => \&_rc_config );
 
@@ -31,32 +39,57 @@ sub resolve_path {
         # download file
         $path = $self->_download( $package );
     }
-    elsif ( -e $package ) {
+    elsif ( -f $package ) {
         # do nothing, file already exists
         $path = $package;
     }
     else {
+        my @repositories = @{ $self->repositories || [] };
+
+        for my $repo ( @repositories ) {
+            $repo .= '/otrs.xml' if '/otrs.xml' ne substr $repo, -9;
+        }
+
         my $repo = OTRS::Repository->new(
-            sources => $self->_repository_for( $self->otrs_version ),
+            sources => \@repositories,
         );
 
-        my ($url) = $repo->find( );
-        $path = $self->_download( $package );
+        my ($otrs) = $self->otrs_version =~ m{\A(\d+\.\d+)};
+
+        my ($url) = $repo->find(
+            name    => $package,
+            otrs    => $otrs,
+            version => $self->version,
+        );
+
+        return if !$url;
+
+        $path = $self->_download( $url );
     }
 
     return $path;
 }
 
 sub _repository_list {
+    my ($self) = @_;
+
+    my $config       = $self->rc_config;
+    my $repositories = $config->{repository};
+
+    return [] if !$repositories;
+    return $repositories;        
 }
 
-sub _is_download {
+sub _is_url {
+    my ($self, $package) = @_;
+
+    return $package =~ m{\A$RE{URI}{$ALLOWED_SCHEME}\z};
 }
 
 sub _download {
     my ($self, $url) = @_;
 
-    my $file     = io '?';
+    my $file     = File::Temp->new->filename;
     my $response = HTTP::Tiny->new->mirror( $url, $file );
 
     $self->logger->notice( area => 'download', file => $file, success => $response->{success} );
@@ -67,31 +100,10 @@ sub _download {
 sub _rc_config {
     my ($self) = @_;
 
-    my $dot_file = File::Spec->catfile(
-        File::HomeDir->my_home,
-        '.opminstaller.rc'
-    );
+    my $utils  = OTRS::OPM::Installer::Utils::Config->new;
+    my $config = $utils->rc_config;
 
-    my %config;
-    if ( -e $dot_file && open my $fh, '<', $dot_file ) {
-        while ( my $line = <$fh> ) {
-            chomp $line;
-            next if $line =~ m{\A\s*\#};
-            next if $line =~ m{\A\s*\z};
-
-            my ($key, $value) = split /\s*=\s*/, $line;
-            $key = lc $key;
-
-            if ( $key eq 'repository' ) {
-                push @{ $config{$key} }, $value;
-            }
-            else {
-                $config{$key} = $value;
-            }
-        }
-    }
-
-    return %config;
+    return $config;
 }
 
 1;

@@ -4,11 +4,12 @@ use strict;
 use warnings;
 
 use Moo;
-use IO::All -utf8;
+use IO::All;
+use File::Temp;
 
 our $VERSION = 0.01;
 
-my $file = io '?';
+my $file = File::Temp->new->filename;
 
 has log => (is => 'ro', default => sub { $file });
 
