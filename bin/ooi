@@ -37,11 +37,12 @@ $installer->install(
 );
 
 sub print_usage {
-    print qq~$0 -p <package> [-h] [-r <repository>] [-v <version>]
+    print qq~$0 -p <package> [-h] [-r <repository>] [-v <version>] [vv]
     
     package:    path or url to opm file
     version:    exact version of otrs package to be installed
     repository: repository for OTRSM packages
     help:       show this screen
+    vv:         be verbose
 ~;
 }

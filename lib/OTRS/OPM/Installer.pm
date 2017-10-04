@@ -22,7 +22,7 @@ use OTRS::OPM::Installer::Logger;
 has package      => ( is => 'ro', isa => Str );
 has otrs_version => ( is => 'ro', isa => Str, lazy => 1, default => \&_build_otrs_version );
 has prove        => ( is => 'ro', default => sub { 0 } );
-has manager      => ( is => 'ro', lazy => 1 );
+has manager      => ( is => 'ro', lazy => 1, default => \&_build_manager );
 has conf         => ( is => 'ro' );
 has utils_otrs   => ( is => 'ro', lazy => 1, default => sub{ OTRS::OPM::Installer::Utils::OTRS->new } );
 has verbose      => ( is => 'ro', default => sub { 0 } );
@@ -57,7 +57,7 @@ sub install {
 
     if ( !$package_path ) {
         my $message = sprintf "Could not find a .opm file for %s%s (OTRS version %s)",
-            $self->package,
+            $params{package} || $self->package,
             ( $file_opts{version} ? " $file_opts{version}" : "" ),
             $self->otrs_version;
 
