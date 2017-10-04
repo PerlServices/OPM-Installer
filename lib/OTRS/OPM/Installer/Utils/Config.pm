@@ -5,9 +5,10 @@ package OTRS::OPM::Installer::Utils::Config;
 use strict;
 use warnings;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 use Carp qw(croak);
+use File::Basename;
 use File::HomeDir;
 use File::Spec;
 use Moo;
@@ -42,6 +43,16 @@ sub _rc_config {
 
             if ( $key eq 'repository' ) {
                 push @{ $config{$key} }, $value;
+            }
+            elsif ( $key eq 'otrs_path' ) {
+                if ( !File::Spec->file_name_is_absolute( $value ) ) {
+                    my $dir = dirname $dot_file;
+                    $value = File::Spec->rel2abs(
+                        File::Spec->catdir( $dir, $value ),
+                    );
+                }
+
+                $config{$key} = $value;
             }
             else {
                 $config{$key} = $value;
