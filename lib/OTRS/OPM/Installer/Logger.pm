@@ -6,12 +6,13 @@ use warnings;
 use Moo;
 use IO::All;
 use File::Temp;
+use Time::Piece;
 
 our $VERSION = 0.01;
 
 my $file = File::Temp->new->filename;
 
-has log => (is => 'ro', default => sub { $file });
+has log  => ( is => 'ro', lazy => 1, default => sub { $file } );
 
 for my $level (qw/notice info debug warn error/) {
     no strict 'refs';
@@ -23,25 +24,31 @@ for my $level (qw/notice info debug warn error/) {
 sub print {
     my ($self, $tag, %attr) = @_;
 
-    my $attrs   = join " ", map{ sprintf '%s="%s"', $_, $attr{$_} }sort keys %attr;
-    my $message = sprintf "<%s %s />", $tag, $attrs;
+    my $attrs   = join " ", map{
+        my $escaped = $attr{$_};
+        $escaped =~ s{\\}{\\\\}g;
+        $escaped =~ s{"}{\\"}g;
+
+        sprintf '%s="%s"', $_, $escaped
+    }sort keys %attr;
+
+    my $date    = localtime;
+    my $message = sprintf "[%s] [%s %s] %s \n", uc $tag, $date->ymd, $date->hms, $attrs;
     $message >> io $self->log;
 }
 
 sub BUILD {
-    my ($self) = @_;
+    my ($self, $param) = @_;
 
-    '<?xml version="1.0" encoding="utf-8" ?>' .
-    "\n" .
-    '<log>'
-        > io $self->log
+    if ( $param->{path} ) {
+        $file = $param->{path};
+    }
+
+    my $date    = localtime;
+    my $message = sprintf "[DEBUG] [%s %s] Start installation...\n", $date->ymd, $date->hms;
+
+    $message > io $self->log
 }
     
-
-sub DEMOLISH {
-    my ($self) = @_;
-
-    '</log>' >> io $self->log; 
-}
-
 1;
+

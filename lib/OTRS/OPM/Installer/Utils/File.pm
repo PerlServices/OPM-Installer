@@ -7,18 +7,18 @@ use warnings;
 
 our $VERSION = 0.01;
 
-use Moo;
-use Types::Standard qw(ArrayRef Str);
-use OTRS::OPM::Installer::Types;
-use OTRS::Repository;
+use File::HomeDir;
+use File::Spec;
+use File::Temp;
 use HTTP::Tiny;
 use IO::All;
-use File::Temp;
+use Moo;
 use OTRS::OPM::Installer::Logger;
 use OTRS::OPM::Installer::Utils::Config;
-use File::Spec;
-use File::HomeDir;
+use OTRS::OPM::Installer::Types;
+use OTRS::Repository;
 use Regexp::Common qw(URI);
+use Types::Standard qw(ArrayRef Str);
 
 our $ALLOWED_SCHEME = 'HTTP';
 
@@ -28,6 +28,7 @@ has otrs_version => ( is => 'ro', isa => Str, required => 1 );
 has version      => ( is => 'ro', isa => Str  );
 has logger       => ( is => 'ro', default => sub{ OTRS::OPM::Installer::Logger->new } );
 has rc_config    => ( is => 'ro', lazy => 1, default => \&_rc_config );
+has conf         => ( is => 'ro' );
 
 sub resolve_path {
     my ($self) = @_;
@@ -100,7 +101,7 @@ sub _download {
 sub _rc_config {
     my ($self) = @_;
 
-    my $utils  = OTRS::OPM::Installer::Utils::Config->new;
+    my $utils  = OTRS::OPM::Installer::Utils::Config->new( conf => $self->conf );
     my $config = $utils->rc_config;
 
     return $config;

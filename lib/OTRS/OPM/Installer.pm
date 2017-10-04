@@ -19,13 +19,16 @@ use OTRS::OPM::Parser;
 use OTRS::OPM::Installer::Types;
 use OTRS::OPM::Installer::Utils::OTRS;
 use OTRS::OPM::Installer::Utils::File;
+use OTRS::OPM::Installer::Utils::Logger;
 
 has package      => ( is => 'ro', isa => Str );
 has otrs_version => ( is => 'ro', isa => Str, lazy => 1, default => \&_build_otrs_version );
 has prove        => ( is => 'ro', default => sub { 0 } );
 has manager      => ( is => 'ro', lazy => 1 );
+has conf         => ( is => 'ro' );
 has utils_otrs   => ( is => 'ro', lazy => 1, default => sub{ OTRS::OPM::Installer::Utils::OTRS->new } );
 has verbose      => ( is => 'ro', default => sub { 0 } );
+has logger       => ( is => 'ro', lazy => 1, default => sub { OTRS::OPM::Installer::Utils::Logger->new } );
 
 sub install {
     my $self   = shift;
@@ -54,11 +57,15 @@ sub install {
 
     my $package_path = $package_utils->resolve_path;
 
-    die sprintf "Could not find a .opm file for %s%s (OTRS version %s)",
-        $self->package,
-        ( $file_opts{version} ? " $file_opts{version}" : "" ),
-        $self->otrs_version
-        if !$package_path;
+    if ( !$package_path ) {
+        my $message = sprintf "Could not find a .opm file for %s%s (OTRS version %s)",
+            $self->package,
+            ( $file_opts{version} ? " $file_opts{version}" : "" ),
+            $self->otrs_version;
+
+        $self->logger->error( fatal => $message );
+        die $message;
+    }
 
     my $parsed = OTRS::OPM::Parser->new(
         opm_file => $package_path,
@@ -66,21 +73,32 @@ sub install {
 
     $parsed->parse;
 
-    die sprintf "Cannot parse $package_path: %s", $parsed->error_string if $parsed->error_string;
+    if ( $parsed->error_string ) {
+        my $message = sprintf "Cannot parse $package_path: %s", $parsed->error_string;
+        $Self->logger->error( fatal => $message );
+        die $message;
+    }
 
-    die sprintf 'framework versions of %s (%s) doesn\'t match otrs version %s',
-        $parsed->name,
-        join ( ', ', $parsed->framework ),
-        $self->otrs_version
-        if !$self->_check_matching_versions( $parsed, $self->otrs_version );
+    if ( !$self->_check_matching_versions( $parsed, $self->otrs_version ) ) {
+        my $message = sprintf 'framework versions of %s (%s) doesn\'t match otrs version %s',
+            $parsed->name,
+            join ( ', ', $parsed->framework ),
+            $self->otrs_version;
+
+        $self->logger->error( fatal => $message );
+        die $message;
+    }
 
     say sprintf "Working on %s...", $parsed->name if $self->verbose;
+    $self->logger->debug( message => sprintf "Working on %s...", $parsed->name );
 
     my @dependencies = $parsed->dependencies;
     my @cpan_deps    = grep{ $_->{type} eq 'CPAN' }@dependencies;
     my @otrs_deps    = grep{ $_->{type} eq 'OTRS' }@dependencies;
 
-    say sprintf "Found dependencies: %s", join ', ', map{ $_->{name} }@dependencies if $self->verbose;
+    my $found_dependencies =  join ', ', map{ $_->{name} }@dependencies;
+    say sprintf "Found dependencies: %s", $found_dependencies if $self->verbose;
+    $self->logger->debug( message => sprintf "Found dependencies: %s", $found_dependencies );
 
     for my $cpan_dep ( @cpan_deps ) {
         my $module  = $cpan_dep->{name};
@@ -195,9 +213,14 @@ dependencies and it can handle dependencies from different places:
   
   # or
   
-  my $installer = OTRS::OPM::Installer->new(
-  );
+  my $installer = OTRS::OPM::Installer->new();
   $installer->install( package => 'FAQ', version => '2.1.9' );
+
+  # provide path to a config file
+  my $installer = OTRS::OPM::Installer->new(
+      conf => 'test.rc',
+  );
+  $installer->install( 'FAQ' );
 
 =head1 CONFIGURATION FILE
 
