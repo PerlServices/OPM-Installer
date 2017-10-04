@@ -15,11 +15,11 @@ use Types::Standard qw(ArrayRef Str);
 use OTRS::OPM::Installer::Types qw(OTRSVersion);
 use OTRS::OPM::Installer::Utils::File;
 
+has path         => ( is => 'ro' );
 has obj_env      => ( is => 'ro',  lazy => 1, default => \&_obj_env );
 has os_env       => ( is => 'ro',  lazy => 1, default => \&_os_env );
 has otrs_version => ( is => 'rwp', lazy => 1, default => \&_find_version);#isa => OTRSVersion );
 has inc          => ( is => 'rwp', lazy => 1, default => \&_build_inc );#isa => ArrayRef[Str] );
-has path         => ( is => 'rwp', lazy => 1, default => \&_find_path );#isa => Str );
 has manager      => ( is => 'rwp', lazy => 1, default => \&_build_manager );#isa => Object );
 has db           => ( is => 'rwp', lazy => 1, default => \&_get_db ); #sub { my $class = $self->obj_env; my $string = $class . '::_get_db'; $self->$string(); } );#isa => Object );
 
