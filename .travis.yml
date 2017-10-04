@@ -9,6 +9,7 @@ perl:
 before_install:
    # Prevent "Please tell me who you are" errors for certain DZIL configs
    - git config --global user.name "TravisCI"
+   - eval $(curl https://travis-perl.github.io/init) --auto
 
 install:
    # Deal with all of the DZIL dependancies, quickly and quietly
