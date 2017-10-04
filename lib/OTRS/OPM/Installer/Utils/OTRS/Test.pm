@@ -1,5 +1,7 @@
 package OTRS::OPM::Installer::Utils::OTRS::Test;
 
+# ABSTRACT: helper functions for Unittests
+
 use strict;
 use warnings;
 

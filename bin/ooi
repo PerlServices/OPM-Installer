@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+# PODNAME: ooi
+
 use strict;
 use warnings;
 

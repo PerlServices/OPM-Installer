@@ -1,5 +1,7 @@
 package OTRS::OPM::Installer::Logger;
 
+# ABSTRACT: A simple logger for OTRS::OPM::Installer
+
 use strict;
 use warnings;
 
@@ -7,8 +9,6 @@ use Moo;
 use IO::All;
 use File::Temp;
 use Time::Piece;
-
-our $VERSION = 0.01;
 
 my $file = File::Temp->new->filename;
 
@@ -52,3 +52,19 @@ sub BUILD {
     
 1;
 
+=head1 SYNOPSIS
+
+    use OTRS::OPM::Installer::Logger;
+    
+    my $logger = OTRS::OPM::Installer::Logger->new; # creates a new temporary file
+    
+    # or
+    my $logger = OTRS::OPM::Installer::Logger->new(
+        path => 'my_otrs_installer.log',
+    );
+
+    $logger->debug( message => 'message' );
+    $logger->error( type => 'cpan', message => 'Cannot install module' );
+    $logger->notice( message => 'test' );
+    $logger->info( any_key => 'a value' );
+    $logger->warn( module => 'test', text => 'a warning' );

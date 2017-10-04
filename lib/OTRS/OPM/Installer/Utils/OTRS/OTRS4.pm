@@ -1,5 +1,7 @@
 package OTRS::OPM::Installer::Utils::OTRS::OTRS4;
 
+# ABSTRACT: helper functions for OTRS4 (and higher)
+
 use strict;
 use warnings;
 

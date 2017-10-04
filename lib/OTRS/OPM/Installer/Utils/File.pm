@@ -5,8 +5,6 @@ package OTRS::OPM::Installer::Utils::File;
 use strict;
 use warnings;
 
-our $VERSION = 0.01;
-
 use File::HomeDir;
 use File::Spec;
 use File::Temp;

@@ -8,7 +8,8 @@ use Test::More;
 use OTRS::OPM::Installer;
 
 {
-    package MyTest;
+    package
+        MyTest;
     use Moo;
 
     sub framework {

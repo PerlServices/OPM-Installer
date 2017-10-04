@@ -1,11 +1,9 @@
 package OTRS::OPM::Installer::Utils::Config;
 
-# ABSTRACT: File related utility functions
+# ABSTRACT: Read config file for OTRS::OPM::Installer
 
 use strict;
 use warnings;
-
-our $VERSION = 0.03;
 
 use Carp qw(croak);
 use File::Basename;

@@ -7,8 +7,6 @@ use v5.10;
 use strict;
 use warnings;
 
-our $VERSION = 0.01;
-
 use Moo;
 use IO::All;
 use Capture::Tiny;
@@ -19,7 +17,7 @@ use OTRS::OPM::Parser;
 use OTRS::OPM::Installer::Types;
 use OTRS::OPM::Installer::Utils::OTRS;
 use OTRS::OPM::Installer::Utils::File;
-use OTRS::OPM::Installer::Utils::Logger;
+use OTRS::OPM::Installer::Logger;
 
 has package      => ( is => 'ro', isa => Str );
 has otrs_version => ( is => 'ro', isa => Str, lazy => 1, default => \&_build_otrs_version );
@@ -28,7 +26,7 @@ has manager      => ( is => 'ro', lazy => 1 );
 has conf         => ( is => 'ro' );
 has utils_otrs   => ( is => 'ro', lazy => 1, default => sub{ OTRS::OPM::Installer::Utils::OTRS->new } );
 has verbose      => ( is => 'ro', default => sub { 0 } );
-has logger       => ( is => 'ro', lazy => 1, default => sub { OTRS::OPM::Installer::Utils::Logger->new } );
+has logger       => ( is => 'ro', lazy => 1, default => sub { OTRS::OPM::Installer::Logger->new } );
 
 sub install {
     my $self   = shift;
@@ -75,7 +73,7 @@ sub install {
 
     if ( $parsed->error_string ) {
         my $message = sprintf "Cannot parse $package_path: %s", $parsed->error_string;
-        $Self->logger->error( fatal => $message );
+        $self->logger->error( fatal => $message );
         die $message;
     }
 
@@ -124,7 +122,9 @@ sub install {
 
     my $content = io( $package_path )->slurp;
 
-    say sprintf "Install %s ...", $parsed->name if $self->verbose;
+    my $message = sprintf "Install %s ...", $parsed->name;
+    say $message if $self->verbose;
+    $self->logger->debug( message => $message );
 
     $self->manager->PackageInstall( String => $content );
 }

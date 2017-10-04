@@ -1,5 +1,7 @@
 package OTRS::OPM::Installer::Utils::OTRS::Linux;
 
+# ABSTRACT: helper functions for OTRS installations on Linux
+
 use strict;
 use warnings;
 

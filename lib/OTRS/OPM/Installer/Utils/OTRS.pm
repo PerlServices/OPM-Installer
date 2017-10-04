@@ -5,8 +5,6 @@ package OTRS::OPM::Installer::Utils::OTRS;
 use strict;
 use warnings;
 
-our $VERSION = 0.01;
-
 use Carp;
 use Moo;
 use Module::Path qw/module_path/;
@@ -57,11 +55,11 @@ sub is_installed {
 sub _check_version {
     my ($self, %param) = @_;
 
-    my @i_parts = split /\./, $param{installed};
-    my @r_parts = split /\./, $param{requested};
+    my @i_parts = split /\./, $param{installed} || 0;
+    my @r_parts = split /\./, $param{requested} || 10000000;
 
-    my $installed = sprintf "%03d%03d%03d", map{ $i_parts[$_] && $i_parts[$_] =~ m{\A[0-9]+\}z} ? $i_parts[$_] : 0 }( 0 .. 2);
-    my $requested = sprintf "%03d%03d%03d", map{ $r_parts[$_] && $r_parts[$_] =~ m{\A[0-9]+\}z} ? $r_parts[$_] : 0 }( 0 .. 2);
+    my $installed = sprintf "%03d%03d%03d", map{ $i_parts[$_] && $i_parts[$_] =~ m{\A[0-9]+\z} ? $i_parts[$_] : 0 }( 0 .. 2);
+    my $requested = sprintf "%03d%03d%03d", map{ $r_parts[$_] && $r_parts[$_] =~ m{\A[0-9]+\z} ? $r_parts[$_] : 0 }( 0 .. 2);
 
     return $installed >= $requested;
 }

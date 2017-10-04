@@ -1,5 +1,7 @@
 package OTRS::OPM::Installer::Utils::OTRS::OTRS3;
 
+# ABSTRACT: helper functions for OTRS3
+
 use strict;
 use warnings;
 
