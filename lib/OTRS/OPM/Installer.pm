@@ -9,7 +9,7 @@ use warnings;
 
 use Moo;
 use IO::All;
-use Capture::Tiny;
+use Capture::Tiny qw(:all);
 use Types::Standard qw(ArrayRef Str);
 
 use OTRS::OPM::Parser;
@@ -24,6 +24,7 @@ has otrs_version => ( is => 'ro', isa => Str, lazy => 1, default => \&_build_otr
 has prove        => ( is => 'ro', default => sub { 0 } );
 has manager      => ( is => 'ro', lazy => 1, default => \&_build_manager );
 has conf         => ( is => 'ro' );
+has sudo         => ( is => 'ro' );
 has utils_otrs   => ( is => 'ro', lazy => 1, default => sub{ OTRS::OPM::Installer::Utils::OTRS->new } );
 has verbose      => ( is => 'ro', default => sub { 0 } );
 has logger       => ( is => 'ro', lazy => 1, default => sub { OTRS::OPM::Installer::Logger->new } );
@@ -87,6 +88,15 @@ sub install {
         die $message;
     }
 
+    if ( $self->utils_otrs->is_installed( package => $parsed->name, version => $parsed->version ) ) {
+        my $message = sprintf 'Addon %s is up to date (%s)',
+            $parsed->name, $parsed->version;
+
+        $self->logger->debug( message => $message );
+        say $message;
+        exit 0;
+    }
+
     say sprintf "Working on %s...", $parsed->name if $self->verbose;
     $self->logger->debug( message => sprintf "Working on %s...", $parsed->name );
 
@@ -102,7 +112,7 @@ sub install {
         my $module  = $cpan_dep->{name};
         my $version = $cpan_dep->{version};
 
-        eval "use $module $version" and next;
+        eval "use $module $version; 1;" and next;
 
         $self->_cpan_install( %{$cpan_dep} );
     }
@@ -133,8 +143,9 @@ sub _cpan_install {
     my ( $self, %params) = @_;
 
     my $dist = $params{name};
+    my @sudo = $self->sudo ? 'sudo' : ();
     my ($out, $err, $exit) = capture {
-        system 'cpanm', $dist;
+        system @sudo, 'cpanm', $dist;
     };
 
     if ( $out !~ m{Successfully installed } ) {
