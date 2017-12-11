@@ -133,6 +133,7 @@ sub _download {
 
     $self->logger->notice( area => 'download', file => $file, success => $response->{success} );
 
+    return if !$response->{success};
     return $file;
 }
 
