@@ -23,6 +23,7 @@ has package      => ( is => 'ro', isa => Str );
 has otrs_version => ( is => 'ro', isa => Str, lazy => 1, default => \&_build_otrs_version );
 has prove        => ( is => 'ro', default => sub { 0 } );
 has manager      => ( is => 'ro', lazy => 1, default => \&_build_manager );
+has repositories => ( is => 'ro', isa => ArrayRef[Str] );
 has conf         => ( is => 'ro' );
 has sudo         => ( is => 'ro' );
 has utils_otrs   => ( is => 'ro', lazy => 1, default => sub{ OTRS::OPM::Installer::Utils::OTRS->new } );
@@ -56,6 +57,10 @@ sub install {
     my %params = @_;
 
     my %file_opts;
+    if ( $self->repositories ) {
+        $file_opts{repositories} = $self->repositories;
+    }
+
     if ( $params{repositories} and ref $params{repositories} eq 'ARRAY' ) {
         $file_opts{repositories} = $params{repositories};
     }
