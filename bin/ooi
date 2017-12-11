@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 # PODNAME: ooi
+# ABSTRACT: Commandline tool to install OTRS addons
 
 use v5.10;
 
@@ -51,7 +52,10 @@ $class_opts{sudo}    = 1             if $sudo;
 
 my $installer = OTRS::OPM::Installer->new( %class_opts );
 
-for my $package ( @ARGV ) {
+for my $package_info ( @ARGV ) {
+    my ($package, $version) = split /=/, $package_info;
+    $opts{version}          = $version if $version;
+
     $installer->install(
         package => $package,
         %opts,
