@@ -11,7 +11,6 @@ use OTRS::OPM::Installer;
 use Getopt::Long;
 
 GetOptions(
-    'p=s'     => \my $package,
     'h'       => \my $help,
     'r=s'     => \my @repositories,
     'v=s'     => \my $version,
@@ -21,7 +20,7 @@ GetOptions(
     'sudo'    => \my $sudo,
 );
 
-$package ||= $ARGV[0];
+unshift @ARGV, $package if $package;
 
 if ( $print_version ) {
     print OTRS::OPM::Installer->VERSION();
@@ -37,7 +36,7 @@ if ( $list_available ) {
     exit;
 }
 
-if( $help || !$package ) {
+if( $help || !@ARGV ) {
     print_usage();
     exit;
 }
@@ -51,15 +50,17 @@ $class_opts{verbose} = 1             if $verbose;
 $class_opts{sudo}    = 1             if $sudo;
 
 my $installer = OTRS::OPM::Installer->new( %class_opts );
-$installer->install(
-    package => $package,
-    %opts,
-);
+
+for my $package ( @ARGV ) {
+    $installer->install(
+        package => $package,
+        %opts,
+    );
+}
 
 sub print_usage {
-    print qq~$0 -p <package> [-h] [-r <repository>] [-v <version>] [vv]
+    print qq~$0 [-h] [-r <repository>] [-v <version>] [vv] <package> [<package>...]
     
-    package:    path or url to opm file
     version:    exact version of otrs package to be installed
     repository: repository for OTRSM packages
     help:       show this screen
