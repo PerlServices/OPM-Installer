@@ -22,14 +22,6 @@ my $dir     = dirname( __FILE__ );
 $dir        =~ s{installer\z}{file};
 my $repo    = 'file://' . File::Spec->rel2abs( File::Spec->catdir( $dir, 'repo' ) );
 
-my $repository = OTRS::Repository->new(
-    sources => [ $repo ],
-);
-
-my @list = $repository->list;
-diag join ', ', @list;
-
-
 my $installer = OTRS::OPM::Installer->new(
     repositories => [ $repo ],
     manager      => MyManager->new, 
