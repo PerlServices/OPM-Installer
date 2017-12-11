@@ -9,6 +9,7 @@ use File::HomeDir;
 use File::Spec;
 use File::Temp;
 use HTTP::Tiny;
+use HTTP::Tiny::FileProtocol;
 use IO::All;
 use Moo;
 use OTRS::OPM::Installer::Logger;
@@ -18,7 +19,7 @@ use OTRS::Repository;
 use Regexp::Common qw(URI);
 use Types::Standard qw(ArrayRef Str);
 
-our $ALLOWED_SCHEME = 'HTTP';
+our $ALLOWED_SCHEME = [ 'HTTP', 'file' ];
 
 has repositories => ( is => 'ro', isa => ArrayRef[Str], default => \&_repository_list );
 has package      => ( is => 'ro', isa => Str, required => 1 );
@@ -27,6 +28,28 @@ has version      => ( is => 'ro', isa => Str  );
 has logger       => ( is => 'ro', default => sub{ OTRS::OPM::Installer::Logger->new } );
 has rc_config    => ( is => 'ro', lazy => 1, default => \&_rc_config );
 has conf         => ( is => 'ro' );
+
+sub list_available {
+    my $self = shift;
+
+   my @repositories = @{ $self->repositories || [] };
+
+   for my $repo ( @repositories ) {
+       $repo .= '/otrs.xml' if '/otrs.xml' ne substr $repo, -9;
+   }
+
+   my $repo = OTRS::Repository->new(
+       sources => \@repositories,
+   );
+
+   my $otrs_version = $self->otrs_version;
+   $otrs_version    =~ s{\.\d+$}{};
+
+   return $repo->list(
+       otrs    => $otrs_version,
+       details => 1,
+   );
+}
 
 sub resolve_path {
     my ($self) = @_;
@@ -82,7 +105,24 @@ sub _repository_list {
 sub _is_url {
     my ($self, $package) = @_;
 
-    return $package =~ m{\A$RE{URI}{$ALLOWED_SCHEME}\z};
+    my @allowed_schemes = ref $ALLOWED_SCHEME ? @{ $ALLOWED_SCHEME } : $ALLOWED_SCHEME;
+
+    my $matches;
+
+    SCHEME:
+    for my $scheme ( @allowed_schemes ) {
+        my $regex = ( lc $scheme eq 'http' ) ?
+            $RE{URI}{HTTP}{-scheme => qr/https?/} :
+            $RE{URI}{$scheme};
+
+        if ( $package =~ m{\A$regex\z} ) {
+            $matches++;
+            last SCHEME;
+        }
+    }
+
+    return if !$matches;
+    return 1;
 }
 
 sub _download {

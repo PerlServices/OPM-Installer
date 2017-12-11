@@ -29,8 +29,25 @@ has utils_otrs   => ( is => 'ro', lazy => 1, default => sub{ OTRS::OPM::Installe
 has verbose      => ( is => 'ro', default => sub { 0 } );
 has logger       => ( is => 'ro', lazy => 1, default => sub { OTRS::OPM::Installer::Logger->new } );
 
+sub list_available {
+    my ( $self, %params ) = @_;
+
+    my %file_opts;
+    if ( $params{repositories} and ref $params{repositories} eq 'ARRAY' ) {
+        $file_opts{repositories} = $params{repositories};
+    }
+
+    my $package_utils = OTRS::OPM::Installer::Utils::File->new(
+        %file_opts,
+        package      => 'DummyPackage',   # ::File needs a package set
+        otrs_version => $self->otrs_version,
+    );
+
+    return $package_utils->list_available;
+}
+
 sub install {
-    my $self   = shift;
+    my $self = shift;
 
     if ( @_ % 2 ) {
         unshift @_, 'package';
@@ -94,7 +111,7 @@ sub install {
 
         $self->logger->debug( message => $message );
         say $message;
-        exit 0;
+        return;
     }
 
     say sprintf "Working on %s...", $parsed->name if $self->verbose;
@@ -137,6 +154,8 @@ sub install {
     $self->logger->debug( message => $message );
 
     $self->manager->PackageInstall( String => $content );
+
+    return 1;
 }
 
 sub _cpan_install {
@@ -237,8 +256,8 @@ dependencies and it can handle dependencies from different places:
 
 You can provide some basic configuration in a F<.opminstaller.rc> file:
 
-  repository=ftp://ftp.otrs.org/pub/otrs/packages
-  repository=ftp://ftp.otrs.org/pub/otrs/itsm/packages33
+  repository=http://ftp.otrs.org/pub/otrs/packages
+  repository=http://ftp.otrs.org/pub/otrs/itsm/packages33
   repository=http://opar.perl-services.de
   repository=http://feature-addons.de/repo
   otrs_path=/srv/otrs
