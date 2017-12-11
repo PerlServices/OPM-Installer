@@ -25,7 +25,7 @@ sub print {
     my ($self, $tag, %attr) = @_;
 
     my $attrs   = join " ", map{
-        my $escaped = $attr{$_};
+        my $escaped = $attr{$_} // '';
         $escaped =~ s{\\}{\\\\}g;
         $escaped =~ s{"}{\\"}g;
 
