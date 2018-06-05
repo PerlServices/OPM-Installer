@@ -43,12 +43,14 @@ sub is_installed {
 
     return if !%info;
 
+    return $info{version} if !$param{version};
+
     my $is_installed = $self->_check_version(
         installed => $info{version},
         requested => $param{version},
     );
 
-    return 1 if $is_installed;
+    return $is_installed if $is_installed;
     return;
 }
 
@@ -61,7 +63,8 @@ sub _check_version {
     my $installed = sprintf "%03d%03d%03d", map{ $i_parts[$_] && $i_parts[$_] =~ m{\A[0-9]+\z} ? $i_parts[$_] : 0 }( 0 .. 2);
     my $requested = sprintf "%03d%03d%03d", map{ $r_parts[$_] && $r_parts[$_] =~ m{\A[0-9]+\z} ? $r_parts[$_] : 0 }( 0 .. 2);
 
-    return $installed >= $requested;
+    return $installed if $installed >= $requested;
+    return;
 }
 
 sub _get_db {

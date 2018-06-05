@@ -2,6 +2,8 @@ package OTRS::OPM::Installer::Utils::File;
 
 # ABSTRACT: File related utility functions
 
+use v5.10;
+
 use strict;
 use warnings;
 
@@ -17,7 +19,7 @@ use OTRS::OPM::Installer::Utils::Config;
 use OTRS::OPM::Installer::Types;
 use OTRS::Repository;
 use Regexp::Common qw(URI);
-use Types::Standard qw(ArrayRef Str);
+use Types::Standard qw(ArrayRef Str Bool);
 
 our $ALLOWED_SCHEME = [ 'HTTP', 'file' ];
 
@@ -25,6 +27,7 @@ has repositories => ( is => 'ro', isa => ArrayRef[Str], default => \&_repository
 has package      => ( is => 'ro', isa => Str, required => 1 );
 has otrs_version => ( is => 'ro', isa => Str, required => 1 );
 has version      => ( is => 'ro', isa => Str  );
+has verbose      => ( is => 'ro', isa => Bool  );
 has logger       => ( is => 'ro', default => sub{ OTRS::OPM::Installer::Logger->new } );
 has rc_config    => ( is => 'ro', lazy => 1, default => \&_rc_config );
 has conf         => ( is => 'ro' );
@@ -34,8 +37,8 @@ sub list_available {
 
    my @repositories = @{ $self->repositories || [] };
 
-   for my $repo ( @repositories ) {
-       $repo .= '/otrs.xml' if '/otrs.xml' ne substr $repo, -9;
+   for my $repo_url ( @repositories ) {
+       $repo_url .= '/otrs.xml' if '/otrs.xml' ne substr $repo_url, -9;
    }
 
    my $repo = OTRS::Repository->new(
@@ -72,6 +75,8 @@ sub resolve_path {
             $repo .= '/otrs.xml' if '/otrs.xml' ne substr $repo, -9;
         }
 
+        say "Searching these repositories: @repositories" if $self->verbose;
+
         my $repo = OTRS::Repository->new(
             sources => \@repositories,
         );
@@ -83,6 +88,8 @@ sub resolve_path {
             otrs    => $otrs,
             version => $self->version,
         );
+
+        say "Found ", $url // '<nothing>' if $self->verbose;
 
         return if !$url;
 

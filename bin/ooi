@@ -12,6 +12,7 @@ use OTRS::OPM::Installer;
 use Getopt::Long;
 
 GetOptions(
+    'p=s'     => \my $package,
     'h'       => \my $help,
     'r=s'     => \my @repositories,
     'v=s'     => \my $version,
@@ -19,6 +20,7 @@ GetOptions(
     'version' => \my $print_version,
     'list'    => \my $list_available,
     'sudo'    => \my $sudo,
+    'force'   => \my $force,
 );
 
 unshift @ARGV, $package if $package;
@@ -49,6 +51,7 @@ $opts{version}      = $version       if $version;
 my %class_opts;
 $class_opts{verbose} = 1             if $verbose;
 $class_opts{sudo}    = 1             if $sudo;
+$class_opts{force}   = 1             if $force;
 
 my $installer = OTRS::OPM::Installer->new( %class_opts );
 
