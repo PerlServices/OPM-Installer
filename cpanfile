@@ -12,13 +12,13 @@ requires "HTTP::Tiny::FileProtocol" => "0.02";
 requires "IO::All" => "0";
 requires "Module::Path" => "0";
 requires "Moo" => "0";
-requires "OTRS::OPM::Parser" => "0";
+requires "OTRS::OPM::Parser" => "1.05";
 requires "OTRS::Repository" => "0.08";
 requires "Regexp::Common" => "0";
 requires "Test::More" => "0";
 requires "Type::Tiny" => "0";
 requires "Types::Standard" => "0";
-requires "perl" => "5.010001";
+requires "perl" => "5.020";
 
 on 'configure' => sub {
     requires "ExtUtils::MakeMaker" => "0";
