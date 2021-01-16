@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/reneeb/OTRS-OPM-Installer.svg?branch=master)](https://travis-ci.org/reneeb/OTRS-OPM-Installer)
+[![Build Status](https://travis-ci.org/perlservices/OTRS-OPM-Installer.svg?branch=master)](https://travis-ci.org/perlservices/OTRS-OPM-Installer)
 [![Kwalitee status](http://cpants.cpanauthors.org/dist/OTRS-OPM-Installer.png)](https://cpants.cpanauthors.org/dist/OTRS-OPM-Installer)
-[![GitHub issues](https://img.shields.io/github/issues/reneeb/OTRS-OPM-Installer.svg)](https://github.com/reneeb/OTRS-OPM-Installer/issues)
+[![GitHub issues](https://img.shields.io/github/issues/perlservices/OTRS-OPM-Installer.svg)](https://github.com/perlservices/OTRS-OPM-Installer/issues)
 
 # NAME
 
@@ -8,7 +8,7 @@ OTRS::OPM::Installer - Install OTRS add ons
 
 # VERSION
 
-version 0.04
+version 0.05
 
 # SYNOPSIS
 
@@ -61,7 +61,7 @@ The distribution is contained in a Git repository, so simply clone the
 repository
 
 ```
-$ git clone http://github.com/reneeb/OTRS-OPM-Installer.git
+$ git clone http://github.com/perlservices/OTRS-OPM-Installer.git
 ```
 
 and change into the newly-created directory.
