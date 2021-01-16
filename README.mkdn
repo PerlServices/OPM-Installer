@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/reneeb/OTRS-OPM-Installer.svg?branch=master)](https://travis-ci.org/reneeb/OTRS-OPM-Installer)
-[![Kwalitee status](http://cpants.cpanauthors.org/dist/OTRS-OPM-Installer.png)](http://cpants.charsbar.org/dist/overview/OTRS-OPM-Installer)
+[![Kwalitee status](http://cpants.cpanauthors.org/dist/OTRS-OPM-Installer.png)](https://cpants.cpanauthors.org/dist/OTRS-OPM-Installer)
 [![GitHub issues](https://img.shields.io/github/issues/reneeb/OTRS-OPM-Installer.svg)](https://github.com/reneeb/OTRS-OPM-Installer/issues)
 
 # NAME
@@ -55,7 +55,7 @@ The development of this packages was sponsored by http://feature-addons.de
 
 
 
-## Development
+# Development
 
 The distribution is contained in a Git repository, so simply clone the
 repository
@@ -101,7 +101,7 @@ $ dzil test --author --release
 
 # AUTHOR
 
-Renee Baecker &lt;reneeb@cpan.org>
+Renee Baecker <reneeb@cpan.org>
 
 # COPYRIGHT AND LICENSE
 
