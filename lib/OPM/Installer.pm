@@ -1,35 +1,37 @@
-package OTRS::OPM::Installer;
+package OPM::Installer;
 
-# ABSTRACT: Install OTRS add ons
+# ABSTRACT: Install ticketsystem (Znuny/OTOBO) add ons
 
-use v5.10;
+use v5.24;
 
 use strict;
 use warnings;
 
+# VERSION
+
 use Moo;
-use IO::All;
 use Capture::Tiny qw(:all);
+use IO::All;
+use Module::Runtime qw(use_module is_module_name);
 use Types::Standard qw(ArrayRef Str Bool);
 
-use OTRS::OPM::Parser;
+use OPM::Parser;
 
-use OTRS::OPM::Installer::Types;
-use OTRS::OPM::Installer::Utils::OTRS;
-use OTRS::OPM::Installer::Utils::File;
-use OTRS::OPM::Installer::Logger;
+use OPM::Installer::Utils::TS;
+use OPM::Installer::Utils::File;
+use OPM::Installer::Logger;
 
 has package      => ( is => 'ro', isa => Str );
-has otrs_version => ( is => 'ro', isa => Str, lazy => 1, default => \&_build_otrs_version );
+has version      => ( is => 'ro', isa => Str, lazy => 1, default => \&_build_version );
 has prove        => ( is => 'ro', default => sub { 0 } );
 has manager      => ( is => 'ro', lazy => 1, default => \&_build_manager );
 has repositories => ( is => 'ro', isa => ArrayRef[Str] );
 has conf         => ( is => 'ro' );
 has force        => ( is => 'ro', isa => Bool );
 has sudo         => ( is => 'ro', isa => Bool );
-has utils_otrs   => ( is => 'ro', lazy => 1, default => sub{ OTRS::OPM::Installer::Utils::OTRS->new } );
+has utils_ts     => ( is => 'ro', lazy => 1, default => sub{ OPM::Installer::Utils::TS->new } );
 has verbose      => ( is => 'ro', isa => Bool, default => sub { 0 } );
-has logger       => ( is => 'ro', lazy => 1, default => sub { OTRS::OPM::Installer::Logger->new } );
+has logger       => ( is => 'ro', lazy => 1, default => sub { OPM::Installer::Logger->new } );
 
 sub list_available {
     my ( $self, %params ) = @_;
@@ -39,10 +41,10 @@ sub list_available {
         $file_opts{repositories} = $params{repositories};
     }
 
-    my $package_utils = OTRS::OPM::Installer::Utils::File->new(
+    my $package_utils = OPM::Installer::Utils::File->new(
         %file_opts,
-        package      => 'DummyPackage',   # ::File needs a package set
-        otrs_version => $self->otrs_version,
+        package => 'DummyPackage',   # ::File needs a package set
+        version => $self->version,
     );
 
     return $package_utils->list_available;
@@ -74,7 +76,7 @@ sub install {
 
     say sprintf "Try to install %s %s...", $params{package} || $self->package, $version_string if $self->verbose;
    
-    my $installed_version = $self->utils_otrs->is_installed( package => $params{package} || $self->package );
+    my $installed_version = $self->utils_ts->is_installed( package => $params{package} || $self->package );
     if ( $installed_version ) {
         my $message = sprintf 'Addon %s is installed (%s)',
             $params{package} || $self->package, $installed_version;
@@ -83,7 +85,7 @@ sub install {
         say $message;
 
         if ( $params{version} ) {
-            my $check = $self->utils_otrs->_check_version(
+            my $check = $self->utils_ts->_check_version(
                 installed => $installed_version,
                 requested => $params{version},
             );
@@ -92,27 +94,27 @@ sub install {
         }
     }
 
-    my $package_utils = OTRS::OPM::Installer::Utils::File->new(
+    my $package_utils = OPM::Installer::Utils::File->new(
         %file_opts,
-        package      => $params{package} || $self->package,
-        otrs_version => $self->otrs_version,
-        verbose      => $self->verbose,
+        package           => $params{package} || $self->package,
+        framework_version => $self->version,
+        verbose           => $self->verbose,
     );
 
     my $package_path = $package_utils->resolve_path;
 
     if ( !$package_path ) {
-        my $message = sprintf "Could not find a .opm file for %s%s (OTRS version %s)",
+        my $message = sprintf "Could not find a .opm file for %s%s (framework version %s)",
             $params{package} || $self->package,
             ( $file_opts{version} ? " $file_opts{version}" : "" ),
-            $self->otrs_version;
+            $self->version;
 
         $self->logger->error( fatal => $message );
         say $message;
         return;
     }
 
-    my $parsed = OTRS::OPM::Parser->new(
+    my $parsed = OPM::Parser->new(
         opm_file => $package_path,
     );
 
@@ -125,18 +127,18 @@ sub install {
         return;
     }
 
-    if ( !$self->_check_matching_versions( $parsed, $self->otrs_version ) ) {
-        my $message = sprintf 'framework versions of %s (%s) doesn\'t match otrs version %s',
+    if ( !$self->_check_matching_versions( $parsed, $self->version ) ) {
+        my $message = sprintf 'framework versions of %s (%s) doesn\'t match ticketsystem version %s',
             $parsed->name,
             join ( ', ', $parsed->framework ),
-            $self->otrs_version;
+            $self->version;
 
         $self->logger->error( fatal => $message );
         say $message;
         return;
     }
 
-    if ( $self->utils_otrs->is_installed( package => $parsed->name, version => $parsed->version ) ) {
+    if ( $self->utils_ts->is_installed( package => $parsed->name, version => $parsed->version ) ) {
         my $message = sprintf 'Addon %s is up to date (%s)',
             $parsed->name, $parsed->version;
 
@@ -150,7 +152,7 @@ sub install {
 
     my @dependencies = @{ $parsed->dependencies || [] };
     my @cpan_deps    = grep{ $_->{type} eq 'CPAN' }@dependencies;
-    my @otrs_deps    = grep{ $_->{type} eq 'OTRS' }@dependencies;
+    my @addon_deps   = grep{ $_->{type} eq 'Addon' }@dependencies;
 
     my $found_dependencies =  join ', ', map{ $_->{name} }@dependencies;
     say sprintf "Found dependencies: %s", $found_dependencies if $self->verbose;
@@ -160,16 +162,18 @@ sub install {
         my $module  = $cpan_dep->{name};
         my $version = $cpan_dep->{version};
 
-        eval "use $module $version; 1;" and next;
+        next CPANDEP if !is_module_name( $module );
+
+        use_module( $module, $version ) and next;
 
         $self->_cpan_install( %{$cpan_dep} );
     }
 
-    for my $otrs_dep ( @otrs_deps ) {
-        my $module  = $otrs_dep->{name};
-        my $version = $otrs_dep->{version};
+    for my $addon_dep ( @addon_deps ) {
+        my $module  = $addon_dep->{name};
+        my $version = $addon_dep->{version};
 
-        $self->utils_otrs->is_installed( %{$otrs_dep} ) and next;
+        $self->utils_ts->is_installed( %{$addon_dep} ) and next;
 
         my $success = $self->install( package => $module, version => $version );
         if ( !$success && !$self->force ) {
@@ -211,21 +215,21 @@ sub _cpan_install {
 sub _build_manager {
     my $self = shift;
 
-    return $self->utils_otrs->manager;
+    return $self->utils_ts->manager;
 }
 
-sub _build_utils_otrs {
-    OTRS::OPM::Installer::Utils::OTRS->new;
+sub _build_utils_ts {
+    OPM::Installer::Utils::TS->new;
 }
 
-sub _build_otrs_version {
-    shift->utils_otrs->otrs_version;
+sub _build_version {
+    shift->utils_ts->framework_version;
 }
 
 sub _check_matching_versions {
-    my ($self, $parsed, $otrs_version) = @_;
+    my ($self, $parsed, $addon_version) = @_;
 
-    my ($major, $minor, $patch) = split /\./, $otrs_version;
+    my ($major, $minor, $patch) = split /\./, $addon_version;
 
     my $check_ok;
 
@@ -248,40 +252,24 @@ sub _check_matching_versions {
 
 =head1 DESCRIPTION
 
-This is an alternate installer for OTRS addons. The standard OTRS package manager
-currently does not install dependencies. OTRS::OPM::Installer takes care of those
-dependencies and it can handle dependencies from different places:
-
-=over 4
-
-=item * OTRS.org
-
-=over 4
-
-=item * ITSM Packages
-
-=item * Misc Packages
-
-=back
-
-=item * OPAR
-
-=back
+This is an alternate installer for Znuny/OTOBO addons. The standard package manager
+currently does not install dependencies. OPM::Installer takes care of those
+dependencies and it can handle dependencies from different places.
 
 =head1 SYNOPSIS
 
-  use OTRS::OPM::Installer;
+  use OPM::Installer;
   
-  my $installer = OTRS::OPM::Installer->new;
+  my $installer = OPM::Installer->new;
   $installer->install( 'FAQ' );
   
   # or
   
-  my $installer = OTRS::OPM::Installer->new();
+  my $installer = OPM::Installer->new();
   $installer->install( package => 'FAQ', version => '2.1.9' );
 
   # provide path to a config file
-  my $installer = OTRS::OPM::Installer->new(
+  my $installer = OPM::Installer->new(
       conf => 'test.rc',
   );
   $installer->install( 'FAQ' );
@@ -290,14 +278,50 @@ dependencies and it can handle dependencies from different places:
 
 You can provide some basic configuration in a F<.opminstaller.rc> file:
 
-  repository=http://ftp.otrs.org/pub/otrs/packages
-  repository=http://ftp.otrs.org/pub/otrs/itsm/packages33
+  repository=http://ftp.addon.org/pub/addon/packages
+  repository=http://ftp.addon.org/pub/addon/itsm/packages33
   repository=http://opar.perl-services.de
   repository=http://feature-addons.de/repo
-  otrs_path=/srv/otrs
+  path=/opt/otrs
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item * conf
+
+=item * force
+
+=item * has
+
+=item * logger
+
+=item * manager
+
+=item * package
+
+=item * prove
+
+=item * repositories
+
+=item * sudo
+
+=item * utils_ts
+
+=item * verbose
+
+=item * version
+
+=back
 
 =head1 ACKNOWLEDGEMENT
 
-The development of this packages was sponsored by http://feature-addons.de
+The development of this package was sponsored by https://feature-addons.de
 
 =cut
+
+=head1 METHODS
+
+=head2 install
+
+=head2 list_available

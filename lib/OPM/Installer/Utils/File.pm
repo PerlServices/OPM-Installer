@@ -1,4 +1,4 @@
-package OTRS::OPM::Installer::Utils::File;
+package OPM::Installer::Utils::File;
 
 # ABSTRACT: File related utility functions
 
@@ -7,6 +7,8 @@ use v5.10;
 use strict;
 use warnings;
 
+# VERSION
+
 use File::HomeDir;
 use File::Spec;
 use File::Temp;
@@ -14,23 +16,22 @@ use HTTP::Tiny;
 use HTTP::Tiny::FileProtocol;
 use IO::All;
 use Moo;
-use OTRS::OPM::Installer::Logger;
-use OTRS::OPM::Installer::Utils::Config;
-use OTRS::OPM::Installer::Types;
-use OTRS::Repository;
+use OPM::Installer::Logger;
+use OPM::Installer::Utils::Config;
+use OPM::Repository;
 use Regexp::Common qw(URI);
 use Types::Standard qw(ArrayRef Str Bool);
 
 our $ALLOWED_SCHEME = [ 'HTTP', 'file' ];
 
-has repositories => ( is => 'ro', isa => ArrayRef[Str], default => \&_repository_list );
-has package      => ( is => 'ro', isa => Str, required => 1 );
-has otrs_version => ( is => 'ro', isa => Str, required => 1 );
-has version      => ( is => 'ro', isa => Str  );
-has verbose      => ( is => 'ro', isa => Bool  );
-has logger       => ( is => 'ro', default => sub{ OTRS::OPM::Installer::Logger->new } );
-has rc_config    => ( is => 'ro', lazy => 1, default => \&_rc_config );
-has conf         => ( is => 'ro' );
+has repositories      => ( is => 'ro', isa => ArrayRef[Str], default => \&_repository_list );
+has package           => ( is => 'ro', isa => Str, required => 1 );
+has framework_version => ( is => 'ro', isa => Str, required => 1 );
+has version           => ( is => 'ro', isa => Str );
+has verbose           => ( is => 'ro', isa => Bool );
+has logger            => ( is => 'ro', default => sub{ OPM::Installer::Logger->new } );
+has rc_config         => ( is => 'ro', lazy => 1, default => \&_rc_config );
+has conf              => ( is => 'ro' );
 
 sub list_available {
     my $self = shift;
@@ -41,16 +42,16 @@ sub list_available {
        $repo_url .= '/otrs.xml' if '/otrs.xml' ne substr $repo_url, -9;
    }
 
-   my $repo = OTRS::Repository->new(
+   my $repo = OPM::Repository->new(
        sources => \@repositories,
    );
 
-   my $otrs_version = $self->otrs_version;
-   $otrs_version    =~ s{\.\d+$}{};
+   my $framework_version = $self->framework_version;
+   $framework_version    =~ s{\.\d+$}{};
 
    return $repo->list(
-       otrs    => $otrs_version,
-       details => 1,
+       framework => $framework_version,
+       details   => 1,
    );
 }
 
@@ -77,15 +78,15 @@ sub resolve_path {
 
         say "Searching these repositories: @repositories" if $self->verbose;
 
-        my $repo = OTRS::Repository->new(
+        my $repo = OPM::Repository->new(
             sources => \@repositories,
         );
 
-        my ($otrs) = $self->otrs_version =~ m{\A(\d+\.\d+)};
+        my ($framework) = $self->framework_version =~ m{\A(\d+\.\d+)};
 
         my ($url) = $repo->find(
-            name    => $package,
-            otrs    => $otrs,
+            name      => $package,
+            framework => $framework,
             version => $self->version,
         );
 
@@ -147,10 +148,43 @@ sub _download {
 sub _rc_config {
     my ($self) = @_;
 
-    my $utils  = OTRS::OPM::Installer::Utils::Config->new( conf => $self->conf );
+    my $utils  = OPM::Installer::Utils::Config->new( conf => $self->conf );
     my $config = $utils->rc_config;
 
     return $config;
 }
 
 1;
+
+=head1 SYNOPSIS
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item * repositories
+
+=item * package
+
+=item * framework_version
+
+=item * version
+
+=item * verbose
+
+=item * logger
+
+=item * rc_config
+
+=item * conf
+
+=back
+
+=head1 METHODS
+
+=head2 is_installed
+
+=head2 list_available
+
+=head2 resolve_path
+

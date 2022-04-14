@@ -14,20 +14,20 @@ use MyManager;
 use MyUtils;
 use MyLogger;
 
-use_ok 'OTRS::OPM::Installer';
+use_ok 'OPM::Installer';
 
-use OTRS::Repository;
+use OPM::Repository;
 
 my $version = '6.0.1';
 my $dir     = dirname( __FILE__ );
 $dir        =~ s{installer\z}{file};
 my $repo    = 'file://' . File::Spec->rel2abs( File::Spec->catdir( $dir, 'repo' ) );
 
-my $installer = OTRS::OPM::Installer->new(
+my $installer = OPM::Installer->new(
     repositories => [ $repo ],
     manager      => MyManager->new, 
-    otrs_version => $version,
-    utils_otrs   => MyUtils->new,
+    version      => $version,
+    utils_ts     => MyUtils->new,
     logger       => MyLogger->new,
     #verbose      => 1,
 );
@@ -63,7 +63,7 @@ eval {
     1;
 } or $error_msg = $@; 
 
-like $installer->logger->log, qr/Could not find a .opm file for NotFound \(OTRS version $version\)/, 'No opm found';
+like $installer->logger->log, qr/Could not find a .opm file for NotFound \(framework version $version\)/, 'No opm found';
 
 # install from URL
 my $installed_from_url = 1;

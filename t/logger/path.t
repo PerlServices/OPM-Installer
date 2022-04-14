@@ -10,15 +10,15 @@ use File::Spec;
 use Test::More;
 use Test::LongString;
 
-use OTRS::OPM::Installer::Logger;
+use OPM::Installer::Logger;
 
-my $logger = OTRS::OPM::Installer::Logger->new(
+my $logger = OPM::Installer::Logger->new(
     path => File::Spec->catfile( dirname(__FILE__), 'test.log' ),
 );
 
-diag "Testing *::Logger version " . OTRS::OPM::Installer::Logger->VERSION;
+diag "Testing *::Logger version " . OPM::Installer::Logger->VERSION;
 
-isa_ok $logger, 'OTRS::OPM::Installer::Logger';
+isa_ok $logger, 'OPM::Installer::Logger';
 
 ok $logger->log;
 

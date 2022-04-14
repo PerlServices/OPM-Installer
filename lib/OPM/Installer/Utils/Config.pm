@@ -1,9 +1,11 @@
-package OTRS::OPM::Installer::Utils::Config;
+package OPM::Installer::Utils::Config;
 
-# ABSTRACT: Read config file for OTRS::OPM::Installer
+# ABSTRACT: Read config file for OPM::Installer
 
 use strict;
 use warnings;
+
+# VERSION
 
 use Carp qw(croak);
 use File::Basename;
@@ -42,7 +44,7 @@ sub _rc_config {
             if ( $key eq 'repository' ) {
                 push @{ $config{$key} }, $value;
             }
-            elsif ( $key eq 'otrs_path' ) {
+            elsif ( $key eq 'path' ) {
                 if ( !File::Spec->file_name_is_absolute( $value ) ) {
                     my $dir = dirname $dot_file;
                     $value = File::Spec->rel2abs(
@@ -62,3 +64,15 @@ sub _rc_config {
 }
 
 1;
+
+=head1 SYNOPSIS
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item * rc_config
+
+=item * conf
+
+=back

@@ -9,13 +9,13 @@ use Test::More;
 use File::Basename;
 use File::Spec;
 
-use OTRS::OPM::Installer::Utils::Config;
+use OPM::Installer::Utils::Config;
 
-my $obj = OTRS::OPM::Installer::Utils::Config->new(
+my $obj = OPM::Installer::Utils::Config->new(
     conf => File::Spec->catfile( dirname(__FILE__), 'test.rc2' ),
 );
 
-isa_ok $obj, 'OTRS::OPM::Installer::Utils::Config';
+isa_ok $obj, 'OPM::Installer::Utils::Config';
 
 my $error;
 my $config;

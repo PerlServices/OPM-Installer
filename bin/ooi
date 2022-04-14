@@ -1,14 +1,16 @@
 #!/usr/bin/perl
 
 # PODNAME: ooi
-# ABSTRACT: Commandline tool to install OTRS addons
+# ABSTRACT: Commandline tool to install Znuny/OTOBO addons
 
 use v5.10;
 
 use strict;
 use warnings;
 
-use OTRS::OPM::Installer;
+# VERSION
+
+use OPM::Installer;
 use Getopt::Long;
 
 GetOptions(
@@ -26,12 +28,12 @@ GetOptions(
 unshift @ARGV, $package if $package;
 
 if ( $print_version ) {
-    print OTRS::OPM::Installer->VERSION();
+    print OPM::Installer->VERSION();
     exit;
 }
 
 if ( $list_available ) {
-    my $installer = OTRS::OPM::Installer->new;
+    my $installer = OPM::Installer->new;
     for my $addon ( $installer->list_available ) {
         say sprintf "%s (%s) from\n    %s\n",
             $addon->{name}, $addon->{version}, $addon->{url};
@@ -53,7 +55,7 @@ $class_opts{verbose} = 1             if $verbose;
 $class_opts{sudo}    = 1             if $sudo;
 $class_opts{force}   = 1             if $force;
 
-my $installer = OTRS::OPM::Installer->new( %class_opts );
+my $installer = OPM::Installer->new( %class_opts );
 
 for my $package_info ( @ARGV ) {
     my ($package, $version) = split /=/, $package_info;
@@ -69,7 +71,7 @@ sub print_usage {
     print qq~$0 [-h] [-r <repository>] [-v <version>] [vv] <package> [<package>...]
     
     version:    exact version of otrs package to be installed
-    repository: repository for OTRSM packages
+    repository: repository for Znuny/OTOBO packages
     help:       show this screen
     vv:         be verbose
 ~;

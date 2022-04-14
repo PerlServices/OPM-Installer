@@ -9,7 +9,7 @@ use Test::More;
 use File::Basename;
 use File::Spec;
 
-use OTRS::OPM::Installer::Utils::Config;
+use OPM::Installer::Utils::Config;
 
 {
     package
@@ -26,18 +26,18 @@ $File::HomeDir::IMPLEMENTED_BY = 'MyHomeDir';
 if ( open my $fh, '>', File::Spec->catfile( dirname( __FILE__ ), '.opminstaller.rc' ) ) {
     print {$fh} "repository=file://hallo/test
 repository=http://opar.perl-services.de/1234
-otrs_path=/local/otrs
+path=/local/app
 ";
     close $fh;
 }
 
-my $obj = OTRS::OPM::Installer::Utils::Config->new;
+my $obj = OPM::Installer::Utils::Config->new;
 
-isa_ok $obj, 'OTRS::OPM::Installer::Utils::Config';
+isa_ok $obj, 'OPM::Installer::Utils::Config';
 
 my $config       = $obj->rc_config;
 my $config_check = {
-    otrs_path  => '/local/otrs',
+    path  => '/local/app',
     repository => [
         'file://hallo/test',
         'http://opar.perl-services.de/1234',

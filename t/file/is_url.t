@@ -9,7 +9,7 @@ use Test::More;
 
 use File::Basename;
 use File::Spec;
-use OTRS::OPM::Installer::Utils::File;
+use OPM::Installer::Utils::File;
 use HTTP::Tiny;
 use HTTP::Tiny::FileProtocol;
 
@@ -19,14 +19,14 @@ my $repo = File::Spec->rel2abs(
 
 my $repo_url = "file://$repo";
 
-my $file = OTRS::OPM::Installer::Utils::File->new(
-    repositories => [],
-    package      => $repo_url . '/TicketOverviewHooked-5.0.6.opm',
-    otrs_version => '5.0.20',
-    rc_config    => {},
+my $file = OPM::Installer::Utils::File->new(
+    repositories      => [],
+    package           => $repo_url . '/TicketOverviewHooked-5.0.6.opm',
+    framework_version => '5.0.20',
+    rc_config         => {},
 );
 
-isa_ok $file, 'OTRS::OPM::Installer::Utils::File';
+isa_ok $file, 'OPM::Installer::Utils::File';
 
 my $path = $file->resolve_path;
 is -s $path, -s "$repo/TicketOverviewHooked-5.0.6.opm";

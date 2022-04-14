@@ -1,25 +1,24 @@
-package OTRS::OPM::Installer::Utils::OTRS;
+package OPM::Installer::Utils::TS;
 
-# ABSTRACT: class that provides helper functionality regarding the OTRS installation
+# ABSTRACT: class that provides helper functionality regarding the addon installation
 
 use strict;
 use warnings;
 
+# VERSION
+
 use Carp;
 use Moo;
-use Module::Path qw/module_path/;
 use Types::Standard qw(ArrayRef Str);
 
-use OTRS::OPM::Installer::Types qw(OTRSVersion);
-use OTRS::OPM::Installer::Utils::File;
+use OPM::Installer::Utils::File;
 
 has path         => ( is => 'ro' );
-has obj_env      => ( is => 'ro',  lazy => 1, default => \&_obj_env );
 has os_env       => ( is => 'ro',  lazy => 1, default => \&_os_env );
-has otrs_version => ( is => 'rwp', lazy => 1, default => \&_find_version);#isa => OTRSVersion );
-has inc          => ( is => 'rwp', lazy => 1, default => \&_build_inc );#isa => ArrayRef[Str] );
-has manager      => ( is => 'rwp', lazy => 1, default => \&_build_manager );#isa => Object );
-has db           => ( is => 'rwp', lazy => 1, default => \&_get_db ); #sub { my $class = $self->obj_env; my $string = $class . '::_get_db'; $self->$string(); } );#isa => Object );
+has framework_version => ( is => 'rwp', lazy => 1, default => \&_find_version);
+has inc          => ( is => 'rwp', lazy => 1, default => \&_build_inc );
+has manager      => ( is => 'rwp', lazy => 1, default => \&_build_manager );
+has db           => ( is => 'rwp', lazy => 1, default => \&_get_db );
 
 sub is_installed {
     my ($self, %param) = @_;
@@ -70,25 +69,33 @@ sub _check_version {
 sub _get_db {
     my ($self) = @_;
 
-    my $class = $self->obj_env;
-    my $path  = module_path $class;
-    require $path;
+    push @INC, @{ $self->inc };
 
-    my $string = $class . '::_get_db';
+    my $object;
+    eval {
+        require Kernel::System::ObjectManager;
+        $Kernel::OM = Kernel::System::ObjectManager->new;
 
-    $self->$string();
+        $object = $Kernel::OM->Get('Kernel::System::DB');
+    } or die $@;
+
+    $object;
 }
  
 sub _build_manager {
     my ($self) = @_;
 
-    my $class = $self->obj_env;
-    my $path  = module_path $class;
-    require $path;
+    push @INC, @{ $self->inc };
 
-    my $string = $class . '::_build_manager';
+    my $manager;
+    eval {
+        require Kernel::System::ObjectManager;
+        $Kernel::OM = Kernel::System::ObjectManager->new;
 
-    $self->$string();
+        $manager = $Kernel::OM->Get('Kernel::System::Package');
+    } or die $@;
+
+    $manager;
 }
  
 sub _find_version {
@@ -116,34 +123,52 @@ sub BUILDARGS {
 
     my %args = @_;
     if ( !exists $args{path} ) {
-        my $utils = OTRS::OPM::Installer::Utils::Config->new;
+        my $utils = OPM::Installer::Utils::Config->new;
         my $cfg   = $utils->rc_config;
 
-        $args{path} = $cfg->{otrs_path} if defined $cfg->{otrs_path};
+        $args{path} = $cfg->{path} if defined $cfg->{path};
     }
 
     return \%args;
 }
 
-sub _obj_env {
-    my ($self) = @_;
-
-    my ($major) = $self->otrs_version =~ m{\A(\d+)\.};
-    if ( $major <= 3 ) {
-        return 'OTRS::OPM::Installer::Utils::OTRS::OTRS3';
-    }
-    else {
-        return 'OTRS::OPM::Installer::Utils::OTRS::OTRS4';
-    }
-}
-
 sub _os_env {
-    if ( $ENV{OTRSOPMINSTALLERTEST} ) {
-        return 'OTRS::OPM::Installer::Utils::OTRS::Test';
+    if ( $ENV{OPMINSTALLERTEST} ) {
+        return 'OPM::Installer::Utils::Test';
     }
     else {
-        return 'OTRS::OPM::Installer::Utils::OTRS::Linux';
+        return 'OPM::Installer::Utils::Linux';
     }
 }
 
 1;
+
+=for Pod::Coverage
+
+=over 4
+
+=item * BUILDARGS
+
+=back
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item * path
+
+=item * os_env
+
+=item * framework_version
+
+=item * inc
+
+=item * manager
+
+=item * db
+
+=back
+
+=head1 METHODS
+
+=head2 is_installed

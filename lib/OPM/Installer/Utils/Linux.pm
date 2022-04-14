@@ -1,9 +1,11 @@
-package OTRS::OPM::Installer::Utils::OTRS::Linux;
+package OPM::Installer::Utils::Linux;
 
-# ABSTRACT: helper functions for OTRS installations on Linux
+# ABSTRACT: helper functions for ticketsystem addon installations on Linux
 
 use strict;
 use warnings;
+
+# VERSION
 
 use Moo::Role;
 
