@@ -39,7 +39,7 @@ sub list_available {
    my @repositories = @{ $self->repositories || [] };
 
    for my $repo_url ( @repositories ) {
-       $repo_url .= '/otrs.xml' if '/otrs.xml' ne substr $repo_url, -9;
+       $repo_url .= '/otrs.xml' if '.xml' ne substr $repo_url, -4;
    }
 
    my $repo = OPM::Repository->new(
@@ -73,7 +73,7 @@ sub resolve_path {
         my @repositories = @{ $self->repositories || [] };
 
         for my $repo ( @repositories ) {
-            $repo .= '/otrs.xml' if '/otrs.xml' ne substr $repo, -9;
+            $repo .= '/otrs.xml' if '.xml' ne substr $repo, -4;
         }
 
         say "Searching these repositories: @repositories" if $self->verbose;
