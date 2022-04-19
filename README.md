@@ -1,6 +1,6 @@
 [![Kwalitee status](https://cpants.cpanauthors.org/dist/OPM-Installer.png)](https://cpants.cpanauthors.org/dist/OPM-Installer)
 [![GitHub issues](https://img.shields.io/github/issues/perlservices/OPM-Installer.svg)](https://github.com/perlservices/OPM-Installer/issues)
-[![CPAN Cover Status](https://cpancoverbadge.perl-services.de/OPM-Installer-1.0.0)](https://cpancoverbadge.perl-services.de/OPM-Installer-1.0.0)
+[![CPAN Cover Status](https://cpancoverbadge.perl-services.de/OPM-Installer-1.0.1)](https://cpancoverbadge.perl-services.de/OPM-Installer-1.0.1)
 [![Cpan license](https://img.shields.io/cpan/l/OPM-Installer.svg)](https://metacpan.org/release/OPM-Installer)
 
 # NAME
@@ -9,7 +9,7 @@ OPM::Installer - Install ticketsystem (Znuny/OTOBO) add ons
 
 # VERSION
 
-version 1.0.0
+version 1.0.1
 
 # SYNOPSIS
 
